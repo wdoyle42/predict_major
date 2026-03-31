@@ -1,0 +1,146 @@
+---
+title: "Online Appendix: Predicting College Major Field of Study"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  stevetemplates::article3:
+    citation_package: biblatex
+bibliography: references.bib
+biblio-style: apa
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.pos = "H",
+  out.width = "100%"
+)
+
+library(targets)
+library(tidyverse)
+library(kableExtra)
+library(here)
+
+tar_load(c(
+  missingness_table,
+  tbl_variable_list,
+  tbl_performance,
+  per_class_metrics,
+  tuning_results,
+  recipe_check,
+  cip_labels
+))
+```
+
+# A. Variable List
+
+Table A\ref{tab:variable-list} provides the complete list of predictor
+variables included in the analysis, including source questionnaire, wave,
+and variable type.
+
+```{r tbl-variable-list}
+tbl_variable_list %>%
+  kableExtra::kbl(
+    caption   = "Predictor variables: source, wave, and type.",
+    booktabs  = TRUE,
+    longtable = TRUE,
+    col.names = c("Variable", "Label", "Source", "Wave", "Type")
+  ) %>%
+  kableExtra::kable_styling(
+    latex_options = c("hold_position", "repeat_header"),
+    font_size = 9
+  ) %>%
+  kableExtra::column_spec(2, width = "8cm")
+```
+
+# B. CIP-2 Category Collapse Decisions
+
+[Document any CIP-2 categories collapsed due to small cell counts, including
+the original categories, the collapsed category, and the rationale.]
+
+```{r tbl-cip-collapse}
+cip_labels %>%
+  dplyr::select(cip2_code, cip2_label, cip2_collapsed_code, cip2_collapsed_label) %>%
+  dplyr::arrange(cip2_collapsed_code, cip2_code) %>%
+  kableExtra::kbl(
+    caption  = "CIP-2 category definitions and collapse decisions.",
+    booktabs = TRUE,
+    col.names = c("Original Code", "Original Label",
+                  "Collapsed Code", "Collapsed Label")
+  ) %>%
+  kableExtra::kable_styling(latex_options = c("hold_position"), font_size = 9)
+```
+
+# C. Missing Data
+
+```{r tbl-missingness}
+missingness_table %>%
+  dplyr::filter(pct_missing > 0) %>%
+  dplyr::mutate(pct_missing = scales::percent(pct_missing, accuracy = 0.1)) %>%
+  kableExtra::kbl(
+    caption  = "Missingness rates for variables with any missing data.",
+    booktabs = TRUE,
+    col.names = c("Variable", "N Missing", "% Missing")
+  ) %>%
+  kableExtra::kable_styling(latex_options = c("hold_position"))
+```
+
+Figure A\ref{fig:missingness} displays the same information graphically.
+
+```{r fig-missingness, fig.cap="Missing data rates by predictor variable, analytic sample prior to imputation."}
+knitr::include_graphics(here("outputs", "figures", "figA1_missingness.png"))
+```
+
+# D. Preprocessing Details
+
+The recipe was applied to the training data and produced
+`r recipe_check$n_predictors` predictor columns after one-hot encoding and
+zero-variance filtering, from `r recipe_check$n_rows` training observations.
+
+# E. Tuning Results
+
+Figure A\ref{fig:tuning} shows the full distribution of cross-validated ROC
+AUC across all 20 hyperparameter combinations evaluated.
+
+```{r fig-tuning, fig.cap="Cross-validated ROC AUC across all tuning grid combinations, ranked best to worst."}
+knitr::include_graphics(here("outputs", "figures", "fig2_tuning_curves.png"))
+```
+
+```{r tbl-tuning-full}
+tune::collect_metrics(tuning_results) %>%
+  dplyr::filter(.metric == "roc_auc") %>%
+  dplyr::select(hidden_units, epochs, penalty, dropout, learn_rate, mean, std_err) %>%
+  dplyr::arrange(dplyr::desc(mean)) %>%
+  kableExtra::kbl(
+    caption  = "Full tuning grid results: macro-weighted ROC AUC by hyperparameter combination.",
+    booktabs = TRUE,
+    digits   = 4,
+    col.names = c("Hidden Units", "Epochs", "L2 Penalty",
+                  "Dropout", "Learn Rate", "Mean AUC", "Std. Error")
+  ) %>%
+  kableExtra::kable_styling(latex_options = c("hold_position"), font_size = 9)
+```
+
+# F. Per-Class Performance
+
+```{r tbl-per-class}
+per_class_metrics %>%
+  dplyr::select(cip2_collapsed_label, metric, .estimate) %>%
+  tidyr::pivot_wider(names_from = metric, values_from = .estimate) %>%
+  dplyr::arrange(dplyr::desc(f1)) %>%
+  kableExtra::kbl(
+    caption  = "Per-class precision, recall, and F1 on the held-out test set.",
+    booktabs = TRUE,
+    digits   = 3,
+    col.names = c("Major Field", "Precision", "Recall", "F1")
+  ) %>%
+  kableExtra::kable_styling(latex_options = c("hold_position"), font_size = 9)
+```
+
+# References {-}

@@ -1,0 +1,282 @@
+---
+title: "Predicting College Major Field of Study: A Neural Network Approach Using the Education Longitudinal Study of 2002"
+shorttitle: "Predicting College Major with Neural Networks"
+author:
+  - name: "Author Name"
+    affiliation: "Institution"
+    email: "author@institution.edu"
+abstract: |
+  Using data from the Education Longitudinal Study of 2002 (ELS:2002), this
+  study applies a feedforward neural network to predict bachelor's degree
+  major field of study (2-digit CIP code) from student background
+  characteristics, psychosocial scales, high school coursetaking transcripts,
+  and early postsecondary experiences measured at or before the 2006 second
+  follow-up. The model is implemented in the tidymodels framework using a
+  keras engine and trained on [N] students who ever enrolled in postsecondary
+  education and subsequently completed a bachelor's degree. Hyperparameters
+  are selected via Latin hypercube grid search across five-fold
+  cross-validation. Results indicate [summary of findings]. Variable
+  importance analysis reveals that [key predictors] are most strongly
+  associated with major field, with implications for [theoretical and
+  practical contributions].
+keywords: "college major, neural networks, ELS:2002, machine learning, higher education"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  stevetemplates::article3:
+    citation_package: biblatex
+bibliography: references.bib
+biblio-style: apa
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.pos = "H",
+  out.width = "100%"
+)
+
+library(targets)
+library(tidyverse)
+library(kableExtra)
+library(here)
+
+# Load all targets needed for this paper
+# No computation happens here — only tar_read() / tar_load() calls
+tar_load(c(
+  analytic_sample,
+  performance_metrics,
+  confusion_matrix,
+  per_class_metrics,
+  vip_scores,
+  tbl_sample_descriptives,
+  tbl_performance,
+  cip_labels,
+  best_params
+))
+```
+
+# Introduction
+
+Which college major a student chooses is among the most consequential
+educational decisions of early adulthood, with lasting implications for
+occupational attainment, earnings trajectories, and social mobility
+[@ma2016; @arcidiacono2004]. Yet the factors that channel students into
+particular fields of study remain only partially understood. Prior research
+has documented the role of socioeconomic background [@mullen2010],
+prior academic achievement [@trusty2002], gender [@charles2004], and
+educational expectations [@crisp2009], but these studies have largely relied
+on linear models that may miss complex, non-linear interactions among
+predictors.
+
+This paper applies a feedforward neural network to predict bachelor's degree
+major field of study — coded at the 2-digit Classification of Instructional
+Programs (CIP) level — using data from the Education Longitudinal Study of
+2002 (ELS:2002). ELS:2002 provides an unusually rich set of predictors
+spanning cognitive achievement, psychosocial attitudes and motivations, high
+school coursetaking trajectories, and early postsecondary experiences, all
+measured before or concurrent with the 2006 second follow-up, well prior to
+the 2012 degree outcome. The neural network is trained within the tidymodels
+framework [@kuhn2022], enabling reproducible integration of preprocessing,
+hyperparameter tuning, and model evaluation.
+
+We make three contributions. First, [contribution 1]. Second,
+[contribution 2]. Third, [contribution 3].
+
+# Data
+
+## Education Longitudinal Study of 2002
+
+The Education Longitudinal Study of 2002 is a nationally representative
+longitudinal study of U.S. tenth graders administered by the National Center
+for Education Statistics [@ingels2014]. The study followed respondents
+through a base year (2002), first follow-up (2004), second follow-up (2006),
+and third follow-up (2012), supplemented by high school and postsecondary
+transcripts.
+
+## Analytic Sample
+
+```{r sample-size}
+n_total <- nrow(analytic_sample)
+```
+
+The analytic sample is restricted to respondents who (1) ever enrolled in a
+postsecondary institution by the 2006 second follow-up and (2) have an
+observed bachelor's degree major field recorded in the 2013 postsecondary
+transcript data. This yields an analytic sample of *N* = `r scales::comma(n_total)`.
+
+## Outcome Variable
+
+The outcome is the 2-digit CIP code of the student's first known bachelor's
+degree (`F3TZBCH1CIP2`), as recorded in the ELS:2002 postsecondary transcript
+file. [Describe CIP collapse decisions and distribution here; pull from
+`tar_read(cip_labels)` as needed.]
+
+Figure \ref{fig:outcome-dist} shows the distribution of major fields in the
+analytic sample.
+
+```{r fig-outcome-dist, fig.cap="Distribution of bachelor's degree major fields in the analytic sample."}
+knitr::include_graphics(here("outputs", "figures", "fig1_outcome_dist.png"))
+```
+
+## Predictor Variables
+
+Predictors are drawn from four waves of ELS:2002 data, all measured at or
+before the second follow-up in 2006. Table \ref{tab:variable-list} in the
+online appendix provides a complete variable list with sources, waves, and
+coding. Here we briefly describe each domain.
+
+**Cognitive achievement.** Math and reading standardized T scores from the
+ELS base year assessment (`BYTXMSTD`, `BYTXRSTD`), scaled to a national mean
+of 50 and standard deviation of 10 [@ingels2014].
+
+**Psychosocial scales.** Six composite scales from the base year student
+questionnaire: math self-efficacy, English self-efficacy, control expectation
+(locus of control), instrumental motivation, effort and persistence, and
+class preparation [@ingels2014]. A school academic climate scale from the
+administrator questionnaire is also included.
+
+**Aspirations and plans.** Student and parent educational expectations,
+expected occupations at age 30 and immediately after high school, and
+postsecondary plans from both the base year and first follow-up.
+
+**High school coursetaking.** Carnegie unit counts by subject area,
+AP/IB course counts by subject, cumulative GPA, and summary pipeline
+indicators (highest math course, math and science coursetaking pipelines,
+curriculum concentration) from the restricted-use high school transcript
+file.
+
+**Postsecondary context.** Institutional characteristics of the first
+attended postsecondary institution, enrollment intensity, financial aid
+receipt, remedial coursetaking, and early postsecondary GPA and credit
+accumulation from the second follow-up and postsecondary transcript data.
+
+## Missing Data
+
+Missing predictor values were imputed within the tidymodels preprocessing
+recipe using median imputation for numeric variables and mode imputation for
+nominal variables, with imputation statistics estimated from training data
+only to prevent data leakage. Missingness indicator variables were added for
+postsecondary transcript GPA and credits earned in years one and two, as the
+fact of missing transcript data is itself informative about enrollment
+pathways. Figure A1 in the online appendix shows missingness rates by
+variable.
+
+# Methods
+
+## Neural Network Architecture
+
+We estimated a feedforward neural network with two fully connected hidden
+layers using the `keras` engine in the tidymodels `parsnip` package
+[@falbel2022]. The network takes a normalized, one-hot encoded feature matrix
+as input and produces a softmax probability distribution over major field
+categories as output. Hidden layers use rectified linear unit (ReLU)
+activation. The model is trained with the Adam optimizer and categorical
+cross-entropy loss.
+
+## Preprocessing
+
+All preprocessing was implemented in a tidymodels recipe applied to training
+data only, with transformations carried forward to the test set and
+cross-validation folds to prevent leakage. Steps included: median and mode
+imputation, one-hot encoding of nominal predictors, removal of zero-variance
+columns, and standardization of all numeric predictors to mean zero and unit
+variance.
+
+## Hyperparameter Tuning
+
+Five hyperparameters were tuned via a 20-point Latin hypercube grid search
+across five-fold cross-validation stratified on major field: hidden units per
+layer (range: 32–256), training epochs (50–300), L2 penalty (10^-5^ to
+10^-1^), dropout rate (0–0.5), and learning rate (10^-4^ to 10^-2^). The
+primary tuning metric was macro-weighted one-versus-rest ROC AUC. The optimal
+configuration is reported in Table \ref{tab:best-params}.
+
+```{r tbl-best-params}
+best_params %>%
+  dplyr::select(hidden_units, epochs, penalty, dropout, learn_rate) %>%
+  kableExtra::kbl(
+    caption = "Selected hyperparameter configuration.",
+    booktabs = TRUE,
+    digits = 4,
+    col.names = c("Hidden Units", "Epochs", "L2 Penalty",
+                  "Dropout", "Learn Rate")
+  ) %>%
+  kableExtra::kable_styling(latex_options = c("hold_position"))
+```
+
+## Evaluation
+
+The final model was fit on the full training set using the selected
+hyperparameters and evaluated on a held-out test set comprising 20% of the
+analytic sample. Performance metrics include overall accuracy,
+macro-weighted ROC AUC, and mean log loss. Per-class precision, recall, and
+F1 are reported in the online appendix.
+
+## Variable Importance
+
+Variable importance was estimated via permutation: each predictor was
+randomly shuffled in the test set and the resulting drop in macro-weighted
+AUC was recorded, averaged across five permutations. Larger drops indicate
+greater model reliance on that feature [@fisher2019].
+
+# Results
+
+## Overall Model Performance
+
+```{r performance-inline}
+acc   <- performance_metrics %>% dplyr::filter(.metric == "accuracy") %>% dplyr::pull(.estimate)
+auc   <- performance_metrics %>% dplyr::filter(.metric == "roc_auc")  %>% dplyr::pull(.estimate)
+loss  <- performance_metrics %>% dplyr::filter(.metric == "mn_log_loss") %>% dplyr::pull(.estimate)
+```
+
+The final model achieved an overall accuracy of `r scales::percent(acc, accuracy = 0.1)`,
+a macro-weighted ROC AUC of `r round(auc, 3)`, and a mean log loss of
+`r round(loss, 3)` on the held-out test set. Figure \ref{fig:confusion-matrix}
+shows the confusion matrix across major field categories.
+
+```{r fig-confusion-matrix, fig.cap="Confusion matrix of predicted versus true major fields on the held-out test set."}
+knitr::include_graphics(here("outputs", "figures", "fig3_confusion_matrix.png"))
+```
+
+## Variable Importance
+
+Figure \ref{fig:vip} displays the 30 most important predictors by permutation
+importance. [Narrative description of top predictors and what they reveal
+about major field determination.]
+
+```{r fig-vip, fig.cap="Permutation-based variable importance: top 30 predictors by mean decrease in macro-weighted AUC."}
+knitr::include_graphics(here("outputs", "figures", "fig4_vip.png"))
+```
+
+# Discussion
+
+[Discussion of main findings, theoretical implications, connections to prior
+literature on major field choice, and practical implications.]
+
+## Limitations
+
+Several limitations should be noted. First, the analytic sample is restricted
+to students who completed a bachelor's degree, introducing selection bias
+that limits generalizability to all college entrants. Second, [limitation 2].
+Third, permutation importance scores reflect model reliance on each feature,
+not causal effects; correlated predictors will have their importance
+underestimated [@molnar2020].
+
+# Conclusion
+
+[Summary of contributions and future directions.]
+
+# References {-}
+
+\setlength{\parindent}{-0.2in}
+\setlength{\leftskip}{0.2in}
+\noindent

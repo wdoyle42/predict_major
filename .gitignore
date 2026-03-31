@@ -1,0 +1,34 @@
+# R artifacts
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+*.Rproj.user/
+
+# renv - lock file is committed; library is not
+renv/library/
+renv/staging/
+
+# targets cache - large, reproducible from pipeline
+_targets/
+
+# Data - NCES restricted-use and processed data are not for public repos
+data/raw/
+data/processed/
+
+# Large model objects - reproducible from pipeline
+outputs/models/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Rendered paper outputs (optional: remove if you want to commit PDFs)
+paper/*.pdf
+paper/*.html
+paper/paper_files/
+
+# Temporary files
+*.tmp
+*.log
+.Rproj.user

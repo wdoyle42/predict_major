@@ -45,11 +45,8 @@ compute_metrics <- function(predictions) {
 #' @param cip_labels CIP label crosswalk from load_cip_labels()
 #' @return conf_mat object with human-readable labels
 compute_confusion_matrix <- function(predictions, cip_labels) {
-  # Join readable labels onto predictions
-  label_lookup <- cip_labels %>%
-    dplyr::select(cip2_collapsed_code, cip2_collapsed_label) %>%
-    dplyr::distinct()
-
+  # label_lookup retained for future use (e.g. relabeling axes)
+  # conf_mat operates on factor levels directly
   predictions %>%
     yardstick::conf_mat(truth = cip2, estimate = .pred_class)
 }
@@ -73,7 +70,10 @@ compute_per_class_metrics <- function(predictions, cip_labels) {
       dplyr::mutate(metric = "f1")
   ) %>%
     dplyr::left_join(
-      cip_labels %>% dplyr::select(cip2_collapsed_code, cip2_collapsed_label) %>% dplyr::distinct(),
+      cip_labels %>%
+        dplyr::select(cip2_collapsed_code, cip2_collapsed_label) %>%
+        dplyr::distinct() %>%
+        dplyr::mutate(cip2_collapsed_code = as.character(cip2_collapsed_code)),
       by = dplyr::join_by(.level == cip2_collapsed_code)
     ) %>%
     dplyr::arrange(metric, dplyr::desc(.estimate))

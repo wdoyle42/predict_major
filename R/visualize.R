@@ -32,7 +32,8 @@ save_figure <- function(plot, filename, width = 7, height = 5) {
 plot_outcome_dist <- function(data, cip_labels) {
   label_lookup <- cip_labels %>%
     dplyr::select(cip2_collapsed_code, cip2_collapsed_label) %>%
-    dplyr::distinct()
+    dplyr::distinct() %>%
+    dplyr::mutate(cip2_collapsed_code = as.factor(cip2_collapsed_code))
 
   p <- data %>%
     dplyr::count(cip2) %>%

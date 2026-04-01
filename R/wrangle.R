@@ -18,7 +18,6 @@ els_vars <- c(
 
   # Cognitive achievement (BY)
   "bytxmstd", "bytxrstd",
-  # NOTE: bytxcstd excluded — linear combination of bytxmstd and bytxrstd
 
   # Attitudinal / psychosocial scales (BY)
   "bymathse", "byenglse", "byconexp", "byinstmo",
@@ -101,6 +100,7 @@ load_els <- function(path) {
   haven::read_dta(path) %>%
     janitor::clean_names() %>%
     dplyr::select(dplyr::any_of(els_vars)) %>%
+    dplyr::mutate(across(everything(), haven::zap_labels)) %>%
     dplyr::mutate(
       dplyr::across(
         dplyr::where(is.numeric),

@@ -20,21 +20,34 @@ compute_vip <- function(final_fit, train_data, n_features = 30) {
   # Extract fitted workflow
   fitted_wf <- tune::extract_workflow(final_fit)
 
-  # Prediction wrapper for vip::vi_permute()
+  # Prediction wrapper: returns a named probability matrix
+  # vip::vi_permute() requires a numeric matrix or vector from pred_wrapper
   pred_fun <- function(object, newdata) {
     predict(object, newdata, type = "prob") %>%
-      # Return matrix of class probabilities for multiclass log loss
       as.matrix()
   }
 
+  # Metric wrapper: multiclass ROC AUC via yardstick
+  # vip requires metric to be a function(actual, predicted) -> scalar
+  metric_fun <- function(actual, predicted) {
+    # predicted is a matrix of class probabilities (one col per class)
+    # actual is a factor vector
+    yardstick::roc_auc_vec(
+      truth     = actual,
+      estimate  = predicted,
+      estimator = "macro_weighted"
+    )
+  }
+
   vip::vi_permute(
-    object     = fitted_wf,
-    train      = train_data,
-    target     = "cip2",
-    metric     = "mauc",          # multiclass AUC
-    pred_wrapper = pred_fun,
-    nsim       = 5,               # average over 5 permutations per feature
-    sample_frac = 0.75            # use 75% of training data per permutation
+    object        = fitted_wf,
+    train         = train_data,
+    target        = "cip2",
+    metric        = metric_fun,
+    smaller_is_better = FALSE,    # higher AUC = better
+    pred_wrapper  = pred_fun,
+    nsim          = 5,            # average over 5 permutations per feature
+    sample_frac   = 0.75          # use 75% of training data per permutation
   ) %>%
     dplyr::slice_max(Importance, n = n_features) %>%
     dplyr::arrange(dplyr::desc(Importance))

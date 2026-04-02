@@ -10,7 +10,7 @@
 #' @return Tibble of hyperparameter combinations
 build_tuning_grid <- function(size = 20, seed = 2002) {
   set.seed(seed)
-  dials::grid_latin_hypercube(
+  dials::grid_space_filling(
     dials::hidden_units(range = c(32L, 256L)),
     dials::epochs(range       = c(50L,  300L)),
     # penalty excluded — fixed at 0 in model spec (can't specify with dropout)
@@ -31,6 +31,19 @@ build_tuning_grid <- function(size = 20, seed = 2002) {
 #' @param grid Tuning grid from build_tuning_grid()
 #' @return tune_results object
 tune_model <- function(wf, folds, grid) {
+
+  # Keras parallelism note:
+  # keras/TensorFlow manages its own internal threading. Running multiple
+  # keras sessions in parallel R workers causes memory conflicts and is
+  # slower in practice on CPU. We keep allow_par = FALSE and instead use
+  # early stopping to reduce per-fit time.
+  #
+  # If you want to try parallel anyway (GPU machine or many cores):
+  #   library(doParallel)
+  #   registerDoParallel(cores = 4)
+  #   set allow_par = TRUE
+ 
+
   tune::tune_grid(
     wf,
     resamples = folds,
@@ -43,7 +56,7 @@ tune_model <- function(wf, folds, grid) {
     control = tune::control_grid(
       save_pred     = TRUE,
       verbose       = TRUE,
-      allow_par     = FALSE   # keras manages its own parallelism
+      allow_par     = FALSE
     )
   )
 }

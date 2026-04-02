@@ -29,9 +29,23 @@ build_model_spec <- function() {
     epochs       = tune::tune(),
     penalty      = 0,            # fixed — cannot specify with dropout
     dropout      = tune::tune()
-    # learn_rate not supported by keras engine — use Adam default (0.001)
+    # learn_rate not supported by keras engine — uses Adam default (0.001)
   ) %>%
-    parsnip::set_engine("keras") %>%
+    parsnip::set_engine(
+      "keras",
+      # Early stopping: halt training if validation loss doesn't improve
+      # for 15 consecutive epochs. Dramatically reduces tuning time when
+      # epochs is set high in the grid — the model stops itself early.
+      # validation_split carves out 20% of training data for monitoring.
+      validation_split = 0.2,
+      callbacks = list(
+        keras::callback_early_stopping(
+          monitor   = "val_loss",
+          patience  = 15,
+          restore_best_weights = TRUE
+        )
+      )
+    ) %>%
     parsnip::set_mode("classification")
 }
 

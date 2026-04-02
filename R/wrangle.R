@@ -14,7 +14,8 @@ els_vars <- c(
   "bygnstat", "bystlang", "byfcomp", "bysibhom",
   "bypared", "bymothed", "byfathed", "bygpared",
   "byoccum", "byoccuf", "byincome", "byses2",
-  "bygrdrpt", "byriskfc", "byiepflg",
+  "bygrdrpt", "byriskfc",
+  # "byiepflg",  # >50% missing on public-use file
 
   # Cognitive achievement (BY)
   "bytxmstd", "bytxrstd",
@@ -24,7 +25,8 @@ els_vars <- c(
   "byactctl", "bystprep", "byacclim",
 
   # Aspirations & plans (BY)
-  "bystexp", "byparasp", "byocc30", "byocchs",
+  "bystexp", "byparasp", "byocc30",
+  # "byocchs",   # >50% missing on public-use file
 
   # Behavioral engagement (BY)
   "byhmwrk", "bynsport", "byxtracu", "byworksy", "bywrkhrs",
@@ -47,7 +49,9 @@ els_vars <- c(
 
   # F1 wave (senior year 2004)
   "f1stexp",  "f1byedex", "f1mathse",
-  "f1occ30",  "f1occhs",  "f1psepln",
+  "f1occ30",
+  # "f1occhs",   # >50% missing on public-use file
+  "f1psepln",
   "f1ses2",   "f1xtracu", "f1wrkhrs",
   "f1colinf", "f1himath", "f1pared",
 
@@ -78,12 +82,15 @@ els_vars <- c(
 nominal_vars <- c(
   "bygnstat", "bystlang", "byfcomp",
   "byoccum",  "byoccuf",
-  "byocc30",  "byocchs",
+  "byocc30",
+  # "byocchs",   # >50% missing on public-use file
   "bysctrl",  "byurban",  "byregion",
-  "byiepflg", "byworksy",
+  # "byiepflg",  # >50% missing on public-use file
+  "byworksy",
   # "f1rtrcc",  "f1racadc", "f1roccuc",  # restricted-use only
   "f1psepln", "f1colinf", "f1himath",
-  "f1occ30",  "f1occhs",
+  "f1occ30",
+  # "f1occhs",   # >50% missing on public-use file
   "f2ps1lvl", "f2ps1sec",
   # "f2ps1slc",  # all-NA on public-use file
   "f2ps1ftp", "f2ps1rem", "f2ps1aid",

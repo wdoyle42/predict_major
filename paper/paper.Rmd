@@ -15,10 +15,7 @@ abstract: |
   keras engine and trained on [N] students who ever enrolled in postsecondary
   education and subsequently completed a bachelor's degree. Hyperparameters
   are selected via Latin hypercube grid search across five-fold
-  cross-validation. Results indicate [summary of findings]. Variable
-  importance analysis reveals that [key predictors] are most strongly
-  associated with major field, with implications for [theoretical and
-  practical contributions].
+  cross-validation.
 keywords: "college major, neural networks, ELS:2002, machine learning, higher education"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output:
@@ -88,8 +85,6 @@ the 2012 degree outcome. The neural network is trained within the tidymodels
 framework [@kuhn2022], enabling reproducible integration of preprocessing,
 hyperparameter tuning, and model evaluation.
 
-We make three contributions. First, [contribution 1]. Second,
-[contribution 2]. Third, [contribution 3].
 
 # Data
 
@@ -111,15 +106,13 @@ n_total <- nrow(analytic_sample)
 The analytic sample is restricted to respondents who (1) ever enrolled in a
 postsecondary institution by the 2006 second follow-up and (2) have an
 observed bachelor's degree major field recorded in the 2013 postsecondary
-transcript data. This yields an analytic sample of *N* = `r scales::comma(n_total)`.
+transcript data.  
 
 ## Outcome Variable
 
 The outcome is the 2-digit CIP code of the student's first known bachelor's
-degree (`F3TZBCH1CIP2`), as recorded in the ELS:2002 postsecondary transcript
-file. [Describe CIP collapse decisions and distribution here; pull from
-`tar_read(cip_labels)` as needed.]
-
+degree as recorded in the ELS:2002 postsecondary transcript
+file. 
 Figure \ref{fig:outcome-dist} shows the distribution of major fields in the
 analytic sample.
 
@@ -135,7 +128,7 @@ online appendix provides a complete variable list with sources, waves, and
 coding. Here we briefly describe each domain.
 
 **Cognitive achievement.** Math and reading standardized T scores from the
-ELS base year assessment (`BYTXMSTD`, `BYTXRSTD`), scaled to a national mean
+ELS base year assessment scaled to a national mean
 of 50 and standard deviation of 10 [@ingels2014].
 
 **Psychosocial scales.** Six composite scales from the base year student
@@ -259,21 +252,10 @@ knitr::include_graphics(here("outputs", "figures", "fig4_vip.png"))
 
 # Discussion
 
-[Discussion of main findings, theoretical implications, connections to prior
-literature on major field choice, and practical implications.]
 
 ## Limitations
 
-Several limitations should be noted. First, the analytic sample is restricted
-to students who completed a bachelor's degree, introducing selection bias
-that limits generalizability to all college entrants. Second, [limitation 2].
-Third, permutation importance scores reflect model reliance on each feature,
-not causal effects; correlated predictors will have their importance
-underestimated [@molnar2020].
-
 # Conclusion
-
-[Summary of contributions and future directions.]
 
 # References {-}
 

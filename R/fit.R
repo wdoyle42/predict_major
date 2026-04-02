@@ -13,9 +13,9 @@ build_tuning_grid <- function(size = 20, seed = 2002) {
   dials::grid_latin_hypercube(
     dials::hidden_units(range = c(32L, 256L)),
     dials::epochs(range       = c(50L,  300L)),
-    dials::penalty(range      = c(-5, -1), trans = scales::log10_trans()),
-    dials::dropout(range      = c(0, 0.5)),
-    dials::learn_rate(range   = c(-4, -2), trans = scales::log10_trans()),
+    # penalty excluded — fixed at 0 in model spec (can't specify with dropout)
+    dials::dropout(range = c(0, 0.5)),
+    # learn_rate excluded — not exposed by keras parsnip engine
     size = size
   )
 }

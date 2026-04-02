@@ -7,23 +7,29 @@
 #' Build keras MLP model specification with tunable hyperparameters
 #'
 #' Tunable parameters:
-#'   - hidden_units: nodes per layer
-#'   - num_comp (epochs): training epochs (aliased via tune())
-#'   - penalty: L2 regularization
-#'   - dropout: dropout rate
-#'   - learn_rate: Adam optimizer learning rate
+#'   - hidden_units: nodes per layer (two equal-width hidden layers)
+#'   - epochs: training epochs
+#'   - dropout: dropout rate applied after each hidden layer
+#'
+#' Fixed parameters:
+#'   - penalty: L2 regularization fixed at 0 (cannot specify alongside
+#'     dropout in the keras parsnip engine)
+#'   - learn_rate: NOT exposed by the keras parsnip engine; Adam optimizer
+#'     uses its default learning rate (0.001). To tune learn_rate, use
+#'     set_engine("keras", optimizer = keras::optimizer_adam(lr = ...))
+#'     and pass via engine args instead.
 #'
 #' Architecture: two hidden layers (parsnip keras engine default).
-#' Activation: relu (default). Output: softmax (multiclass).
+#' Activation: relu. Output: softmax (multiclass).
 #'
 #' @return Unfit parsnip model spec
 build_model_spec <- function() {
   parsnip::mlp(
     hidden_units = tune::tune(),
     epochs       = tune::tune(),
-    penalty      = tune::tune(),
-    dropout      = tune::tune(),
-    learn_rate   = tune::tune()
+    penalty      = 0,            # fixed — cannot specify with dropout
+    dropout      = tune::tune()
+    # learn_rate not supported by keras engine — use Adam default (0.001)
   ) %>%
     parsnip::set_engine("keras") %>%
     parsnip::set_mode("classification")

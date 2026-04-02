@@ -46,7 +46,7 @@ build_recipe <- function(train_data) {
     recipes::step_dummy(recipes::all_nominal_predictors(), one_hot = TRUE) %>%
 
     # ── Housekeeping ──────────────────────────────────────────────────────
-    # Drop zero-variance columns (emerge from sparse one-hot cells)
+    # Drop zero-variance columns (emerge from sparse one-hot cells or single-value factors)
     recipes::step_zv(recipes::all_predictors()) %>%
 
     # Normalize to mean=0, sd=1 — required for stable keras training

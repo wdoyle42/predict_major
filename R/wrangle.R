@@ -32,21 +32,18 @@ els_vars <- c(
   # School context (BY)
   "bysctrl", "byurban", "byregion",
 
-  # HS transcript: subject credits (restricted-use; silently skipped if absent)
-  "f1rhtun",  "f1rhtac",  "f1rhtvo",  "f1rhtco",
-  "f1rmat_c", "f1rsci_c", "f1reng_c", "f1rsoc_c",
-  "f1rnon_c", "f1rfin_c", "f1rfam_c", "f1rsla_c",
-  "f1rcal_c", "f1rpre_c", "f1ral2_c",
-  "f1rbio_c", "f1rche_c", "f1rphy_c", "f1rear_c",
-
-  # HS transcript: AP/IB coursetaking (restricted-use)
-  "f1rapib",  "f1rapma",  "f1rapca",  "f1rapsc",
-  "f1rapen",  "f1rapso",  "f1rapne",  "f1rapcs",
-
-  # HS transcript: GPA & program (restricted-use)
-  "f1rgp",    "f1ragp",   "f1ragph",  "f1rgpa",
-  "f1rmapip", "f1rscpip", "f1rtrcc",
-  "f1racadc", "f1roccuc",
+  # HS transcript: restricted-use only — excluded from public-use analysis
+  # Uncomment if working with restricted-use file:
+  # "f1rhtun",  "f1rhtac",  "f1rhtvo",  "f1rhtco",
+  # "f1rmat_c", "f1rsci_c", "f1reng_c", "f1rsoc_c",
+  # "f1rnon_c", "f1rfin_c", "f1rfam_c", "f1rsla_c",
+  # "f1rcal_c", "f1rpre_c", "f1ral2_c",
+  # "f1rbio_c", "f1rche_c", "f1rphy_c", "f1rear_c",
+  # "f1rapib",  "f1rapma",  "f1rapca",  "f1rapsc",
+  # "f1rapen",  "f1rapso",  "f1rapne",  "f1rapcs",
+  # "f1rgp",    "f1ragp",   "f1ragph",  "f1rgpa",
+  # "f1rmapip", "f1rscpip", "f1rtrcc",
+  # "f1racadc", "f1roccuc",
 
   # F1 wave (senior year 2004)
   "f1stexp",  "f1byedex", "f1mathse",
@@ -55,14 +52,17 @@ els_vars <- c(
   "f1colinf", "f1himath", "f1pared",
 
   # F2 postsecondary context (2006)
-  "f2evratt",  "f2ps1lvl", "f2ps1sec", "f2ps1slc",
+  "f2evratt",  "f2ps1lvl", "f2ps1sec",
+  # "f2ps1slc",  # all-NA on public-use file
   "f2ps1ftp",  "f2ps1rem", "f2ps1aid",
   "f2psstrt",  "f2enrgap", "f2switch",
   "f2stexp",   "f2f1edex", "f2pseexm", "f2psepln",
-  "f2psapsl",  "f2ptn3ps", "f2nattnd", "f2hs2ps1",
+  "f2psapsl",  "f2ptn3ps",
+  # "f2nattnd", "f2hs2ps1",  # all-NA on public-use file
 
   # F3TZ transcript — early enrollment only (years 1-2; safe predictors)
-  "f3tzps1ctr", "f3tzps1lvl", "f3tzps1sec", "f3tzps1slc",
+  # "f3tzps1ctr", "f3tzps1lvl",  # all-NA on public-use file
+  "f3tzps1sec", "f3tzps1slc",
   "f3tzhs2ps1",
   "f3tzyr1ern", "f3tzyr2ern", "f3tzyr12ern",
   "f3tzyr1gpa", "f3tzyr2gpa",
@@ -81,14 +81,16 @@ nominal_vars <- c(
   "byocc30",  "byocchs",
   "bysctrl",  "byurban",  "byregion",
   "byiepflg", "byworksy",
-  "f1rtrcc",  "f1racadc", "f1roccuc",
+  # "f1rtrcc",  "f1racadc", "f1roccuc",  # restricted-use only
   "f1psepln", "f1colinf", "f1himath",
   "f1occ30",  "f1occhs",
-  "f2ps1lvl", "f2ps1sec", "f2ps1slc",
+  "f2ps1lvl", "f2ps1sec",
+  # "f2ps1slc",  # all-NA on public-use file
   "f2ps1ftp", "f2ps1rem", "f2ps1aid",
   "f2enrgap", "f2switch", "f2pseexm",
   "f2ptn3ps",
-  "f3tzps1ctr", "f3tzps1lvl", "f3tzps1sec", "f3tzps1slc"
+  # "f3tzps1ctr", "f3tzps1lvl",  # all-NA on public-use file
+  "f3tzps1sec", "f3tzps1slc"
 )
 
 
@@ -180,8 +182,8 @@ summarize_missingness <- function(data) {
     ) %>%
     tidyr::pivot_longer(
       dplyr::everything(),
-      names_to  = c("variable", ".value"),
-      names_sep = "_(?=[^_]+$)"
+      names_to    = c("variable", ".value"),
+      names_pattern = "^(.+)_(n_missing|pct_missing)$"
     ) %>%
     dplyr::arrange(dplyr::desc(pct_missing))
 }

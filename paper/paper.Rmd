@@ -242,9 +242,7 @@ knitr::include_graphics(here("outputs", "figures", "fig3_confusion_matrix.png"))
 
 ## Variable Importance
 
-Figure \ref{fig:vip} displays the 30 most important predictors by permutation
-importance. [Narrative description of top predictors and what they reveal
-about major field determination.]
+
 
 ```{r fig-vip, fig.cap="Permutation-based variable importance: top 30 predictors by mean decrease in macro-weighted AUC."}
 knitr::include_graphics(here("outputs", "figures", "fig4_vip.png"))
